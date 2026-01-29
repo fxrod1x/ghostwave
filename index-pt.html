@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ghostwave Trading Wallet Project</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            line-height: 1.6;
+            position: relative;
+            min-height: 100vh;
+        }
+
+        .lightning-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .lightning-bg::before {
+            content: '';
+            position: absolute;
+            top: -10%;
+            left: -10%;
+            width: 120%;
+            height: 120%;
+            background-image: url('ghostwave_background.jpeg');
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
+            filter: blur(0px);
+            transform: scale(1.05);
+        }
+
+        .lightning-bg::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            background: linear-gradient(180deg, 
+                rgba(0, 0, 0, 0.3) 0%, 
+                rgba(10, 10, 20, 0.5) 50%, 
+                rgba(0, 0, 0, 0.6) 100%);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 20px;
+            border-bottom: 2px solid rgba(139, 92, 246, 0.3);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .logo {
+            max-width: 600px;
+            width: 100%;
+            height: auto;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 0 30px rgba(139, 92, 246, 0.8));
+        }
+
+        .language-switch {
+            margin: 20px 0;
+        }
+
+        .language-switch a {
+            color: #a78bfa;
+            text-decoration: none;
+            margin: 0 10px;
+            font-weight: bold;
+            transition: color 0.3s;
+            font-size: 1.1em;
+        }
+
+        .language-switch a:hover {
+            color: #60a5fa;
+            text-shadow: 0 0 10px rgba(96, 165, 250, 0.8);
+        }
+
+        .hero {
+            text-align: center;
+            padding: 60px 20px;
+            background: rgba(10, 10, 30, 0.9);
+            border-radius: 20px;
+            margin: 40px 0;
+            border: 2px solid rgba(139, 92, 246, 0.5);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.6);
+        }
+
+        .hero h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            color: #ffffff;
+            text-shadow: 0 0 20px rgba(139, 92, 246, 0.8);
+        }
+
+        .hero p {
+            font-size: 1.2em;
+            color: #e0e7ff;
+            max-width: 800px;
+            margin: 0 auto 30px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+        }
+
+        .status-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+            padding: 12px 35px;
+            border-radius: 30px;
+            font-weight: bold;
+            margin: 20px 0;
+            box-shadow: 0 0 40px rgba(139, 92, 246, 0.8);
+            font-size: 1.1em;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin: 60px 0;
+        }
+
+        .feature-card {
+            background: rgba(10, 10, 30, 0.9);
+            padding: 30px;
+            border-radius: 15px;
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.6);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 50px rgba(139, 92, 246, 0.6);
+            border-color: rgba(139, 92, 246, 0.8);
+        }
+
+        .feature-card h3 {
+            color: #a78bfa;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+            text-shadow: 0 0 15px rgba(167, 139, 250, 0.5);
+        }
+
+        .feature-card p {
+            color: #cbd5e1;
+        }
+
+        .waitlist {
+            background: rgba(10, 10, 30, 0.95);
+            padding: 60px 20px;
+            border-radius: 20px;
+            text-align: center;
+            margin: 60px 0;
+            border: 2px solid rgba(139, 92, 246, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.6);
+        }
+
+        .waitlist h2 {
+            font-size: 2em;
+            color: #ffffff;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px rgba(139, 92, 246, 0.8);
+        }
+
+        .waitlist-form {
+            max-width: 500px;
+            margin: 30px auto;
+        }
+
+        .waitlist-form input {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            border: 2px solid rgba(139, 92, 246, 0.5);
+            background: rgba(5, 5, 20, 0.95);
+            color: #ffffff;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .waitlist-form input:focus {
+            outline: none;
+            border-color: #a78bfa;
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.6);
+        }
+
+        .waitlist-form input::placeholder {
+            color: #94a3b8;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 15px 40px;
+            margin: 10px;
+            background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: bold;
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 40px rgba(139, 92, 246, 0.8);
+        }
+
+        .social-links {
+            margin: 40px 0;
+            text-align: center;
+        }
+
+        .social-links h2 {
+            color: #ffffff;
+            margin-bottom: 30px;
+            text-shadow: 0 0 20px rgba(139, 92, 246, 0.8);
+        }
+
+        .social-links a {
+            display: inline-block;
+            margin: 0 15px;
+            padding: 15px 30px;
+            background: rgba(139, 92, 246, 0.5);
+            border: 2px solid #a78bfa;
+            border-radius: 10px;
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s;
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+        }
+
+        .social-links a:hover {
+            background: rgba(139, 92, 246, 0.8);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 40px rgba(139, 92, 246, 0.7);
+        }
+
+        .screenshot-section {
+            margin: 60px 0;
+            text-align: center;
+        }
+
+        .screenshot-section h2 {
+            font-size: 2em;
+            color: #ffffff;
+            margin-bottom: 40px;
+            text-shadow: 0 0 20px rgba(139, 92, 246, 0.8);
+        }
+
+        .screenshot-placeholder {
+            background: rgba(10, 10, 30, 0.9);
+            border: 2px dashed rgba(139, 92, 246, 0.5);
+            border-radius: 15px;
+            padding: 100px 20px;
+            margin: 20px 0;
+            color: #94a3b8;
+            font-style: italic;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            transition: border-color 0.3s;
+        }
+
+        .screenshot-placeholder:hover {
+            border-color: rgba(139, 92, 246, 0.8);
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px 20px;
+            border-top: 2px solid rgba(139, 92, 246, 0.3);
+            margin-top: 60px;
+            color: #94a3b8;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 1.8em;
+            }
+
+            .features {
+                grid-template-columns: 1fr;
+            }
+
+            .logo {
+                max-width: 90%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="lightning-bg"></div>
+
+    <div class="container">
+        <header>
+            <img src="ghostwave_logo.png" alt="Ghostwave Trading Wallet Project" class="logo">
+            <div class="language-switch">
+                <a href="index.html">English</a> | <a href="index-pt.html">Português</a>
+            </div>
+        </header>
+
+        <section class="hero">
+            <h1>Indicador Profissional para TradingView</h1>
+            <p>Um indicador de trading de ponta projetado para precisão e alta performance. Construído com algoritmos avançados para identificar oportunidades de trading otimizadas.</p>
+            <div class="status-badge">🚀 EM DESENVOLVIMENTO - ALTO POTENCIAL</div>
+        </section>
+
+        <section class="features">
+            <div class="feature-card">
+                <h3>⚡ Algoritmos Avançados</h3>
+                <p>Alimentado por métodos sofisticados de análise para detectar zonas de oferta e demanda com precisão excepcional.</p>
+            </div>
+
+            <div class="feature-card">
+                <h3>📊 Análise Multi-Timeframe</h3>
+                <p>Funciona perfeitamente em múltiplos timeframes para fornecer insights abrangentes do mercado.</p>
+            </div>
+
+            <div class="feature-card">
+                <h3>🎯 Sinais Precisos</h3>
+                <p>Sinais claros de entrada e saída projetados para estratégias de scalping e day trading.</p>
+            </div>
+
+            <div class="feature-card">
+                <h3>💎 Nível Profissional</h3>
+                <p>Construído por traders algorítmicos experientes com histórico comprovado em sistemas automatizados.</p>
+            </div>
+
+            <div class="feature-card">
+                <h3>🔄 Atualizações em Tempo Real</h3>
+                <p>Análise de mercado ao vivo com notificações instantâneas de oportunidades de trading.</p>
+            </div>
+
+            <div class="feature-card">
+                <h3>🛡️ Gerenciamento de Risco</h3>
+                <p>Recursos integrados de gerenciamento de risco para proteger seu capital e maximizar retornos.</p>
+            </div>
+        </section>
+
+        <section class="screenshot-section">
+            <h2>Performance do Indicador</h2>
+            <div class="screenshot-placeholder">
+                📈 Screenshot do Gráfico #1<br>
+                (Adicione suas capturas de tela do indicador aqui)
+            </div>
+            <div class="screenshot-placeholder">
+                📊 Screenshot do Gráfico #2<br>
+                (Adicione suas capturas de tela do indicador aqui)
+            </div>
+            <div class="screenshot-placeholder">
+                💹 Screenshot do Gráfico #3<br>
+                (Adicione suas capturas de tela do indicador aqui)
+            </div>
+        </section>
+
+        <section class="waitlist">
+            <h2>Entre na Lista de Espera</h2>
+            <p>Esteja entre os primeiros a acessar este poderoso indicador quando for lançado.</p>
+
+            <form class="waitlist-form" id="waitlistForm">
+                <input type="text" placeholder="Seu Nome" required>
+                <input type="email" placeholder="Seu Email" required>
+                <input type="tel" placeholder="WhatsApp/Telegram (Opcional)">
+                <button type="submit" class="btn">Entrar na Lista</button>
+            </form>
+        </section>
+
+        <section class="social-links">
+            <h2>Conecte-se Conosco</h2>
+            <a href="https://t.me/seu_grupo_telegram" target="_blank">📱 Grupo Telegram</a>
+            <a href="https://instagram.com/seu_instagram" target="_blank">📸 Instagram</a>
+        </section>
+
+        <footer>
+            <p>&copy; 2026 Ghostwave Trading Wallet Project. Todos os direitos reservados.</p>
+            <p>Construído com precisão para traders profissionais.</p>
+        </footer>
+    </div>
+
+    <script>
+        document.getElementById('waitlistForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            alert('Obrigado por entrar na nossa lista de espera! Entraremos em contato em breve.');
+            this.reset();
+        });
+    </script>
+</body>
+</html>
