@@ -1,434 +1,494 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ghostwave Trading Wallet Project</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+//+------------------------------------------------------------------+
+//|                                          TradePanel.mq5           |
+//|                              CORREÇÃO FINAL - SEM ERROS          |
+//+------------------------------------------------------------------+
+#property copyright "TradePanel"
+#property version   "1.00"
+#property strict
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #0a0a0a;
-            color: #ffffff;
-            line-height: 1.6;
-            position: relative;
-            min-height: 100vh;
-        }
+#include <Trade\Trade.mqh>
 
-        .lightning-bg {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            overflow: hidden;
-        }
+//--- INPUTS
+input group "═══ TRADING ═══"
+input double  Volume = 0.01;
+input int     TP = 2000;
+input int     SL = 2000;
+input bool    UseBE = false;
+input int     BEPontos = 50;
+input bool    UseTrail = false;
+input int     TrailInicio = 200;
+input int     TrailDist = 180;
 
-        .lightning-bg::before {
-            content: '';
-            position: absolute;
-            top: -10%;
-            left: -10%;
-            width: 120%;
-            height: 120%;
-            background-image: url('ghostwave_background.jpeg');
-            background-size: cover;
-            background-position: center center;
-            background-repeat: no-repeat;
-            image-rendering: -webkit-optimize-contrast;
-            image-rendering: crisp-edges;
-            filter: blur(0px);
-            transform: scale(1.05);
-        }
+input group "═══ DAILY STATS ═══"
+input double  MetaDia = 5.0;
+input bool    ResetAuto = true;
 
-        .lightning-bg::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            background: linear-gradient(180deg, 
-                rgba(0, 0, 0, 0.3) 0%, 
-                rgba(10, 10, 20, 0.5) 50%, 
-                rgba(0, 0, 0, 0.6) 100%);
-        }
+input group "═══ SYSTEM ═══"
+input int     Magic = 999999;
+input bool    Logs = true;
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-            position: relative;
-            z-index: 1;
-        }
+//--- GLOBALS
+CTrade trade;
+double lote = Volume;
+bool trail = UseTrail;
+bool breakeven = UseBE;
 
-        header {
-            text-align: center;
-            padding: 40px 20px;
-            border-bottom: 2px solid rgba(139, 92, 246, 0.3);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            background: rgba(0, 0, 0, 0.5);
-            border-radius: 15px;
-            margin-bottom: 20px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-        }
+datetime diaCheck;
+double balInicial = 0;
+int w = 0;
+int l = 0;
+double prof = 0;
+double loss = 0;
+datetime statsInicio;
 
-        .logo {
-            max-width: 600px;
-            width: 100%;
-            height: auto;
-            margin-bottom: 20px;
-            filter: drop-shadow(0 0 30px rgba(139, 92, 246, 0.8));
-        }
+string p = "TP_";
 
-        .language-switch {
-            margin: 0px 0;
-        }
+//+------------------------------------------------------------------+
+int OnInit()
+{
+    trade.SetExpertMagicNumber(Magic);
+    trade.SetDeviationInPoints(10);
+    trade.SetTypeFilling(ORDER_FILLING_FOK);
 
-        .language-switch a {
-            color: #a78bfa;
-            text-decoration: none;
-            margin: 0 10px;
-            font-weight: bold;
-            transition: color 0.3s;
-            font-size: 1.1em;
-        }
+    balInicial = AccountInfoDouble(ACCOUNT_BALANCE);
+    statsInicio = TimeCurrent();
+    diaCheck = TimeCurrent();
 
-        .language-switch a:hover {
-            color: #60a5fa;
-            text-shadow: 0 0 10px rgba(96, 165, 250, 0.8);
-        }
+    Limpar();
+    Sleep(50);
 
-        .hero {
-            text-align: center;
-            padding: 60px 20px;
-            background: rgba(10, 10, 30, 0.9);
-            border-radius: 20px;
-            margin: 40px 0;
-            border: 2px solid rgba(139, 92, 246, 0.5);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.6);
-        }
+    CriarPainel();
+    CriarStats();
+    Atualizar();
 
-        .hero h1 {
-            font-size: 2.5em;
-            margin-bottom: 20px;
-            color: #ffffff;
-            text-shadow: 0 0 20px rgba(139, 92, 246, 0.8);
-        }
+    Print("═══════════════════════════");
+    Print(" TradePanel INICIADO       ");
+    Print("═══════════════════════════");
 
-        .hero p {
-            font-size: 1.2em;
-            color: #e0e7ff;
-            max-width: 800px;
-            margin: 0 auto 30px;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
-        }
+    return(INIT_SUCCEEDED);
+}
 
-        .status-badge {
-            display: inline-block;
-            background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
-            padding: 12px 35px;
-            border-radius: 30px;
-            font-weight: bold;
-            margin: 20px 0;
-            box-shadow: 0 0 40px rgba(139, 92, 246, 0.8);
-            font-size: 1.1em;
-        }
+//+------------------------------------------------------------------+
+void OnDeinit(const int reason) { Limpar(); }
 
-        .features {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 30px;
-            margin: 60px 0;
-        }
+//+------------------------------------------------------------------+
+void OnTick()
+{
+    MqlDateTime agora, ant;
+    TimeToStruct(TimeCurrent(), agora);
+    TimeToStruct(diaCheck, ant);
 
-        .feature-card {
-            background: rgba(10, 10, 30, 0.9);
-            padding: 30px;
-            border-radius: 15px;
-            border: 1px solid rgba(139, 92, 246, 0.4);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            transition: transform 0.3s, box-shadow 0.3s;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.6);
-        }
+    if(ResetAuto && agora.day != ant.day)
+    {
+        Resetar();
+        diaCheck = TimeCurrent();
+    }
 
-        .feature-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 15px 50px rgba(139, 92, 246, 0.6);
-            border-color: rgba(139, 92, 246, 0.8);
-        }
+    if(PositionSelect(_Symbol))
+    {
+        if(breakeven) FazerBE();
+        if(trail) FazerTrail();
+    }
 
-        .feature-card h3 {
-            color: #a78bfa;
-            margin-bottom: 15px;
-            font-size: 1.5em;
-            text-shadow: 0 0 15px rgba(167, 139, 250, 0.5);
-        }
+    static datetime u = 0;
+    if(TimeCurrent() - u >= 1)
+    {
+        Atualizar();
+        u = TimeCurrent();
+    }
+}
 
-        .feature-card p {
-            color: #cbd5e1;
-        }
+//+------------------------------------------------------------------+
+void OnTradeTransaction(const MqlTradeTransaction& trans,
+                        const MqlTradeRequest& request,
+                        const MqlTradeResult& result)
+{
+    if(trans.type == TRADE_TRANSACTION_DEAL_ADD)
+    {
+        if(HistoryDealSelect(trans.deal))
+        {
+            long mg = HistoryDealGetInteger(trans.deal, DEAL_MAGIC);
+            string sm = HistoryDealGetString(trans.deal, DEAL_SYMBOL);
 
-        .waitlist {
-            background: rgba(10, 10, 30, 0.95);
-            padding: 60px 20px;
-            border-radius: 20px;
-            text-align: center;
-            margin: 60px 0;
-            border: 2px solid rgba(139, 92, 246, 0.6);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.6);
-        }
+            if(mg == Magic && sm == _Symbol)
+            {
+                long ent = HistoryDealGetInteger(trans.deal, DEAL_ENTRY);
 
-        .waitlist h2 {
-            font-size: 2em;
-            color: #ffffff;
-            margin-bottom: 20px;
-            text-shadow: 0 0 20px rgba(139, 92, 246, 0.8);
-        }
+                if(ent == DEAL_ENTRY_OUT)
+                {
+                    double prf = HistoryDealGetDouble(trans.deal, DEAL_PROFIT);
+                    double swp = HistoryDealGetDouble(trans.deal, DEAL_SWAP);
+                    double com = HistoryDealGetDouble(trans.deal, DEAL_COMMISSION);
+                    double liq = prf + swp + com;
 
-        .waitlist-form {
-            max-width: 500px;
-            margin: 30px auto;
-        }
+                    long mot = HistoryDealGetInteger(trans.deal, DEAL_REASON);
+                    string tp = "MANUAL";
+                    if(mot == DEAL_REASON_TP) tp = "TP";
+                    else if(mot == DEAL_REASON_SL) tp = "SL";
 
-        .waitlist-form input {
-            width: 100%;
-            padding: 15px;
-            margin: 10px 0;
-            border: 2px solid rgba(139, 92, 246, 0.5);
-            background: rgba(5, 5, 20, 0.95);
-            color: #ffffff;
-            border-radius: 10px;
-            font-size: 1em;
-            transition: border-color 0.3s, box-shadow 0.3s;
-        }
+                    if(Logs)
+                    {
+                        Print("═══════════════════");
+                        Print("TRADE FECHADO [", tp, "]");
+                        Print("Resultado: $", DoubleToString(liq, 2));
+                        Print("═══════════════════");
+                    }
 
-        .waitlist-form input:focus {
-            outline: none;
-            border-color: #a78bfa;
-            box-shadow: 0 0 20px rgba(139, 92, 246, 0.6);
-        }
+                    if(liq > 0)
+                    {
+                        w++;
+                        prof += liq;
+                        if(Logs) Print(">>> WIN #", w);
+                    }
+                    else if(liq < 0)
+                    {
+                        l++;
+                        loss += MathAbs(liq);
+                        if(Logs) Print(">>> LOSS #", l);
+                    }
 
-        .waitlist-form input::placeholder {
-            color: #94a3b8;
-        }
-
-        .btn {
-            display: inline-block;
-            padding: 15px 40px;
-            margin: 10px;
-            background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
-            color: white;
-            text-decoration: none;
-            border-radius: 10px;
-            font-weight: bold;
-            transition: transform 0.3s, box-shadow 0.3s;
-            border: none;
-            cursor: pointer;
-            font-size: 1em;
-        }
-
-        .btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 5px 40px rgba(139, 92, 246, 0.8);
-        }
-
-        .social-links {
-            margin: 40px 0;
-            text-align: center;
-        }
-
-        .social-links h2 {
-            color: #ffffff;
-            margin-bottom: 30px;
-            text-shadow: 0 0 20px rgba(139, 92, 246, 0.8);
-        }
-
-        .social-links a {
-            display: inline-block;
-            margin: 0 15px;
-            padding: 15px 30px;
-            background: rgba(139, 92, 246, 0.5);
-            border: 2px solid #a78bfa;
-            border-radius: 10px;
-            color: #ffffff;
-            text-decoration: none;
-            font-weight: bold;
-            transition: all 0.3s;
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-        }
-
-        .social-links a:hover {
-            background: rgba(139, 92, 246, 0.8);
-            transform: translateY(-5px);
-            box-shadow: 0 10px 40px rgba(139, 92, 246, 0.7);
-        }
-
-        .screenshot-section {
-            margin: 60px 0;
-            text-align: center;
-        }
-
-        .screenshot-section h2 {
-            font-size: 2em;
-            color: #ffffff;
-            margin-bottom: 40px;
-            text-shadow: 0 0 20px rgba(139, 92, 246, 0.8);
-        }
-
-        .screenshot-placeholder {
-            background: rgba(10, 10, 30, 0.9);
-            border: 2px dashed rgba(139, 92, 246, 0.5);
-            border-radius: 15px;
-            padding: 100px 20px;
-            margin: 20px 0;
-            color: #94a3b8;
-            font-style: italic;
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            transition: border-color 0.3s;
-        }
-
-        .screenshot-placeholder:hover {
-            border-color: rgba(139, 92, 246, 0.8);
-        }
-
-        footer {
-            text-align: center;
-            padding: 40px 20px;
-            border-top: 2px solid rgba(139, 92, 246, 0.3);
-            margin-top: 60px;
-            color: #94a3b8;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border-radius: 15px;
-        }
-
-        @media (max-width: 768px) {
-            .hero h1 {
-                font-size: 1.8em;
-            }
-
-            .features {
-                grid-template-columns: 1fr;
-            }
-
-            .logo {
-                max-width: 90%;
+                    Atualizar();
+                }
             }
         }
-    </style>
-</head>
-<body>
-    <div class="lightning-bg"></div>
+    }
+}
 
-    <div class="container">
-        <header>
-            <img src="ghostwave_logo.png" alt="Ghostwave Trading Wallet Project" class="logo">
-            <div class="language-switch">
-                <a href="index.html">English</a> | <a href="index-pt.html">Português</a>
-            </div>
-        </header>
+//+------------------------------------------------------------------+
+void OnChartEvent(const int id, const long &lparam, const double &dparam, const string &sparam)
+{
+    if(id == CHARTEVENT_OBJECT_CLICK)
+    {
+        if(sparam == p + "Buy")
+        {
+            Operar(ORDER_TYPE_BUY);
+            ObjectSetInteger(0, sparam, OBJPROP_STATE, false);
+        }
+        else if(sparam == p + "Sell")
+        {
+            Operar(ORDER_TYPE_SELL);
+            ObjectSetInteger(0, sparam, OBJPROP_STATE, false);
+        }
+        else if(sparam == p + "Close")
+        {
+            Fechar();
+            ObjectSetInteger(0, sparam, OBJPROP_STATE, false);
+        }
+        else if(sparam == p + "BE")
+        {
+            breakeven = !breakeven;
+            Toggle(p + "BE", breakeven, "BE");
+            ObjectSetInteger(0, sparam, OBJPROP_STATE, false);
+        }
+        else if(sparam == p + "Trail")
+        {
+            trail = !trail;
+            Toggle(p + "Trail", trail, "TRAIL");
+            ObjectSetInteger(0, sparam, OBJPROP_STATE, false);
+        }
+        else if(sparam == p + "Reset")
+        {
+            Resetar();
+            ObjectSetInteger(0, sparam, OBJPROP_STATE, false);
+        }
+        ChartRedraw();
+    }
 
-        <section class="hero">
-            <h1>Indicador Profissional para TradingView</h1>
-            <p>Um indicador de trading de ponta projetado para precisão e alta performance. Construído com algoritmos avançados para identificar oportunidades de trading otimizadas.</p>
-            <div class="status-badge">🚀 PROJETO EM DESENVOLVIMENTO </div>
-        </section>
+    if(id == CHARTEVENT_OBJECT_ENDEDIT)
+    {
+        if(sparam == p + "Vol")
+        {
+            string txt = ObjectGetString(0, p + "Vol", OBJPROP_TEXT);
+            lote = StringToDouble(txt);
+            if(lote < SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN))
+                lote = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
+        }
+    }
+}
 
-        <section class="features">
-            <div class="feature-card">
-                <h3>⚡ Algoritmos Avançados</h3>
-                <p>Alimentado por métodos sofisticados de análise para detectar zonas de oferta e demanda com precisão excepcional.</p>
-            </div>
+//+------------------------------------------------------------------+
+//| PAINEL - INFERIOR ESQUERDO - POSIÇÕES CORRETAS
+//+------------------------------------------------------------------+
+void CriarPainel()
+{
+    // Painel: 220 largura x 230 altura
+    // Posição: 15px esquerda, 15px do fundo
+    int px = 15;
+    int py = 15;
+    int pw = 220;
+    int ph = 230;
 
-            <div class="feature-card">
-                <h3>📊 Análise Multi-Timeframe</h3>
-                <p>Funciona perfeitamente em múltiplos timeframes para fornecer insights abrangentes do mercado.</p>
-            </div>
+    // FUNDO - com borda
+    Ret(p + "Bg", px, py, pw, ph, C'30,30,30', CORNER_LEFT_LOWER);
 
-            <div class="feature-card">
-                <h3>🎯 Sinais Precisos</h3>
-                <p>Sinais claros de entrada e saída projetados para estratégias de scalping e day trading.</p>
-            </div>
+    // Agora os elementos DENTRO do fundo
+    // Como é LOWER, Y cresce para CIMA
+    // Fundo vai de py (15) até py+ph (245)
 
-            <div class="feature-card">
-                <h3>💎 Nível Profissional</h3>
-                <p>Construído por traders algorítmicos experientes com histórico comprovado em sistemas automatizados.</p>
-            </div>
+    int margem = 8;
+    int yAtual = py + ph - 20; // Começa próximo ao topo do painel (15+230-20=225)
 
-            <div class="feature-card">
-                <h3>🔄 Atualizações em Tempo Real</h3>
-                <p>Análise de mercado ao vivo com notificações instantâneas de oportunidades de trading.</p>
-            </div>
+    // Título
+    Txt(p + "Titulo", px + margem, yAtual, "TRADEPANEL", clrWhite, 9, CORNER_LEFT_LOWER);
+    yAtual -= 25;
 
-            <div class="feature-card">
-                <h3>🛡️ Gerenciamento de Risco</h3>
-                <p>Recursos integrados de gerenciamento de risco para proteger seu capital e maximizar retornos.</p>
-            </div>
-        </section>
+    // Volume
+    Txt(p + "LblVol", px + margem, yAtual, "Volume:", clrWhite, 8, CORNER_LEFT_LOWER);
+    yAtual -= 20;
+    Input(p + "Vol", px + margem, yAtual, 204, 22, DoubleToString(lote, 2), CORNER_LEFT_LOWER);
+    yAtual -= 30;
 
-        <section class="screenshot-section">
-            <h2>Performance do Indicador</h2>
-            <div class="screenshot-placeholder">
-                📈 Screenshot do Gráfico #1<br>
-                (Adicione suas capturas de tela do indicador aqui)
-            </div>
-            <div class="screenshot-placeholder">
-                📊 Screenshot do Gráfico #2<br>
-                (Adicione suas capturas de tela do indicador aqui)
-            </div>
-            <div class="screenshot-placeholder">
-                💹 Screenshot do Gráfico #3<br>
-                (Adicione suas capturas de tela do indicador aqui)
-            </div>
-        </section>
+    // Botões
+    Btn(p + "Buy", px + margem, yAtual, 204, 28, "COMPRAR", clrForestGreen, CORNER_LEFT_LOWER);
+    yAtual -= 32;
 
-        <section class="waitlist">
-            <h2>Entre na Lista de Espera</h2>
-            <p>Esteja entre os primeiros a acessar este poderoso indicador quando for lançado.</p>
+    Btn(p + "Sell", px + margem, yAtual, 204, 28, "VENDER", clrCrimson, CORNER_LEFT_LOWER);
+    yAtual -= 32;
 
-            <form class="waitlist-form" id="waitlistForm">
-                <input type="text" placeholder="Seu Nome" required>
-                <input type="email" placeholder="Seu Email" required>
-                <input type="tel" placeholder="WhatsApp/Telegram (Opcional)">
-                <button type="submit" class="btn">Entrar na Lista</button>
-            </form>
-        </section>
+    Btn(p + "Close", px + margem, yAtual, 204, 28, "FECHAR", clrDarkOrange, CORNER_LEFT_LOWER);
+    yAtual -= 32;
 
-        <section class="social-links">
-            <h2>Conecte-se Conosco</h2>
-            <a href="https://t.me/seu_grupo_telegram" target="_blank">📱 Grupo Telegram</a>
-            <a href="https://instagram.com/fxrod1x" target="_blank">📸 Instagram</a>
-        </section>
+    Btn(p + "BE", px + margem, yAtual, 99, 26, "BE: OFF", C'70,70,70', CORNER_LEFT_LOWER);
+    Btn(p + "Trail", px + margem + 105, yAtual, 99, 26, "TRAIL: OFF", C'70,70,70', CORNER_LEFT_LOWER);
+}
 
-        <footer>
-            <p>&copy; 2026 Ghostwave Trading Wallet Project. Todos os direitos reservados.</p>
-            <p>Construído com precisão para traders profissionais.</p>
-        </footer>
-    </div>
+//+------------------------------------------------------------------+
+//| STATS - SUPERIOR DIREITO - SEM FUNDO
+//+------------------------------------------------------------------+
+void CriarStats()
+{
+    int mr = 10;
+    int ty = 20;
+    int gap = 14;
 
-    <script>
-        document.getElementById('waitlistForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            alert('Obrigado por entrar na nossa lista de espera! Entraremos em contato em breve.');
-            this.reset();
-        });
-    </script>
-</body>
-</html>
+    Txt(p + "StTitle", mr, ty, "═ DAILY STATS ═", clrGold, 8, CORNER_RIGHT_UPPER);
+    Txt(p + "StMeta", mr, ty + gap, "Meta: " + DoubleToString(MetaDia, 1) + "%", clrWhite, 7, CORNER_RIGHT_UPPER);
+    Txt(p + "StProg", mr, ty + gap * 2, "Progress: 0%", clrWhite, 7, CORNER_RIGHT_UPPER);
+    Txt(p + "StW", mr, ty + gap * 3, "Wins: 0", clrLimeGreen, 7, CORNER_RIGHT_UPPER);
+    Txt(p + "StL", mr, ty + gap * 4, "Loss: 0", clrTomato, 7, CORNER_RIGHT_UPPER);
+    Txt(p + "StProf", mr, ty + gap * 5, "Profit: $0", clrLimeGreen, 7, CORNER_RIGHT_UPPER);
+    Txt(p + "StLoss", mr, ty + gap * 6, "Loss: $0", clrTomato, 7, CORNER_RIGHT_UPPER);
+    Txt(p + "StNet", mr, ty + gap * 7, "Net: $0", clrWhite, 8, CORNER_RIGHT_UPPER);
+
+    Btn(p + "Reset", mr + 70, ty + gap * 8 + 5, 60, 20, "RESET", C'50,50,70', CORNER_RIGHT_UPPER);
+}
+
+//+------------------------------------------------------------------+
+void Ret(string n, int x, int y, int w, int h, color bg, ENUM_BASE_CORNER c)
+{
+    ObjectCreate(0, n, OBJ_RECTANGLE_LABEL, 0, 0, 0);
+    ObjectSetInteger(0, n, OBJPROP_CORNER, c);
+    ObjectSetInteger(0, n, OBJPROP_XDISTANCE, x);
+    ObjectSetInteger(0, n, OBJPROP_YDISTANCE, y);
+    ObjectSetInteger(0, n, OBJPROP_XSIZE, w);
+    ObjectSetInteger(0, n, OBJPROP_YSIZE, h);
+    ObjectSetInteger(0, n, OBJPROP_BGCOLOR, bg);
+    ObjectSetInteger(0, n, OBJPROP_BORDER_TYPE, BORDER_FLAT);
+    ObjectSetInteger(0, n, OBJPROP_BORDER_COLOR, C'60,60,60');
+    ObjectSetInteger(0, n, OBJPROP_SELECTABLE, false);
+    ObjectSetInteger(0, n, OBJPROP_BACK, false);
+}
+
+//+------------------------------------------------------------------+
+void Txt(string n, int x, int y, string txt, color cor, int sz, ENUM_BASE_CORNER c)
+{
+    ObjectCreate(0, n, OBJ_LABEL, 0, 0, 0);
+    ObjectSetInteger(0, n, OBJPROP_CORNER, c);
+    ObjectSetInteger(0, n, OBJPROP_XDISTANCE, x);
+    ObjectSetInteger(0, n, OBJPROP_YDISTANCE, y);
+    ObjectSetInteger(0, n, OBJPROP_COLOR, cor);
+    ObjectSetInteger(0, n, OBJPROP_FONTSIZE, sz);
+    ObjectSetString(0, n, OBJPROP_FONT, "Arial Bold");
+    ObjectSetString(0, n, OBJPROP_TEXT, txt);
+    ObjectSetInteger(0, n, OBJPROP_SELECTABLE, false);
+}
+
+//+------------------------------------------------------------------+
+void Btn(string n, int x, int y, int w, int h, string txt, color bg, ENUM_BASE_CORNER c)
+{
+    ObjectCreate(0, n, OBJ_BUTTON, 0, 0, 0);
+    ObjectSetInteger(0, n, OBJPROP_CORNER, c);
+    ObjectSetInteger(0, n, OBJPROP_XDISTANCE, x);
+    ObjectSetInteger(0, n, OBJPROP_YDISTANCE, y);
+    ObjectSetInteger(0, n, OBJPROP_XSIZE, w);
+    ObjectSetInteger(0, n, OBJPROP_YSIZE, h);
+    ObjectSetInteger(0, n, OBJPROP_BGCOLOR, bg);
+    ObjectSetInteger(0, n, OBJPROP_COLOR, clrWhite);
+    ObjectSetInteger(0, n, OBJPROP_FONTSIZE, 8);
+    ObjectSetString(0, n, OBJPROP_FONT, "Arial Bold");
+    ObjectSetString(0, n, OBJPROP_TEXT, txt);
+    ObjectSetInteger(0, n, OBJPROP_SELECTABLE, false);
+}
+
+//+------------------------------------------------------------------+
+void Input(string n, int x, int y, int w, int h, string txt, ENUM_BASE_CORNER c)
+{
+    ObjectCreate(0, n, OBJ_EDIT, 0, 0, 0);
+    ObjectSetInteger(0, n, OBJPROP_CORNER, c);
+    ObjectSetInteger(0, n, OBJPROP_XDISTANCE, x);
+    ObjectSetInteger(0, n, OBJPROP_YDISTANCE, y);
+    ObjectSetInteger(0, n, OBJPROP_XSIZE, w);
+    ObjectSetInteger(0, n, OBJPROP_YSIZE, h);
+    ObjectSetInteger(0, n, OBJPROP_BGCOLOR, clrWhite);
+    ObjectSetInteger(0, n, OBJPROP_COLOR, clrBlack);
+    ObjectSetInteger(0, n, OBJPROP_FONTSIZE, 9);
+    ObjectSetString(0, n, OBJPROP_FONT, "Arial");
+    ObjectSetString(0, n, OBJPROP_TEXT, txt);
+    ObjectSetInteger(0, n, OBJPROP_ALIGN, ALIGN_CENTER);
+    ObjectSetInteger(0, n, OBJPROP_SELECTABLE, false);
+}
+
+//+------------------------------------------------------------------+
+void Operar(ENUM_ORDER_TYPE tipo)
+{
+    if(PositionSelect(_Symbol)) { Print("Posição existe!"); return; }
+
+    double preco = (tipo == ORDER_TYPE_BUY) ? SymbolInfoDouble(_Symbol, SYMBOL_ASK) : SymbolInfoDouble(_Symbol, SYMBOL_BID);
+    double pt = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
+    int dg = (int)SymbolInfoInteger(_Symbol, SYMBOL_DIGITS);
+
+    double sl = (tipo == ORDER_TYPE_BUY) ? 
+                NormalizeDouble(preco - SL * pt, dg) : 
+                NormalizeDouble(preco + SL * pt, dg);
+
+    double tp = (tipo == ORDER_TYPE_BUY) ? 
+                NormalizeDouble(preco + TP * pt, dg) : 
+                NormalizeDouble(preco - TP * pt, dg);
+
+    if(tipo == ORDER_TYPE_BUY)
+        trade.Buy(lote, _Symbol, preco, sl, tp, "TradePanel");
+    else
+        trade.Sell(lote, _Symbol, preco, sl, tp, "TradePanel");
+
+    if(trade.ResultRetcode() == TRADE_RETCODE_DONE)
+        Print(">>> Trade: ", (tipo == ORDER_TYPE_BUY ? "COMPRA" : "VENDA"));
+}
+
+//+------------------------------------------------------------------+
+void Fechar()
+{
+    if(PositionSelect(_Symbol))
+    {
+        trade.PositionClose(_Symbol);
+        Print(">>> Fechado");
+    }
+}
+
+//+------------------------------------------------------------------+
+void FazerBE()
+{
+    if(!PositionSelect(_Symbol)) return;
+
+    double ab = PositionGetDouble(POSITION_PRICE_OPEN);
+    double sl = PositionGetDouble(POSITION_SL);
+    ENUM_POSITION_TYPE tipo = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
+    double pt = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
+    int dg = (int)SymbolInfoInteger(_Symbol, SYMBOL_DIGITS);
+
+    if(tipo == POSITION_TYPE_BUY)
+    {
+        double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+        if((bid - ab) / pt >= BEPontos)
+        {
+            double nsl = NormalizeDouble(ab + BEPontos * pt, dg);
+            if(nsl > sl || sl == 0)
+                trade.PositionModify(_Symbol, nsl, PositionGetDouble(POSITION_TP));
+        }
+    }
+    else
+    {
+        double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+        if((ab - ask) / pt >= BEPontos)
+        {
+            double nsl = NormalizeDouble(ab - BEPontos * pt, dg);
+            if(nsl < sl || sl == 0)
+                trade.PositionModify(_Symbol, nsl, PositionGetDouble(POSITION_TP));
+        }
+    }
+}
+
+//+------------------------------------------------------------------+
+void FazerTrail()
+{
+    if(!PositionSelect(_Symbol)) return;
+
+    double ab = PositionGetDouble(POSITION_PRICE_OPEN);
+    double sl = PositionGetDouble(POSITION_SL);
+    ENUM_POSITION_TYPE tipo = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
+    double pt = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
+    int dg = (int)SymbolInfoInteger(_Symbol, SYMBOL_DIGITS);
+
+    if(tipo == POSITION_TYPE_BUY)
+    {
+        double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+        if((bid - ab) / pt >= TrailInicio)
+        {
+            double nsl = NormalizeDouble(bid - TrailDist * pt, dg);
+            if(nsl > sl || sl == 0)
+                trade.PositionModify(_Symbol, nsl, PositionGetDouble(POSITION_TP));
+        }
+    }
+    else
+    {
+        double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+        if((ab - ask) / pt >= TrailInicio)
+        {
+            double nsl = NormalizeDouble(ask + TrailDist * pt, dg);
+            if(nsl < sl || sl == 0)
+                trade.PositionModify(_Symbol, nsl, PositionGetDouble(POSITION_TP));
+        }
+    }
+}
+
+//+------------------------------------------------------------------+
+void Resetar()
+{
+    balInicial = AccountInfoDouble(ACCOUNT_BALANCE);
+    statsInicio = TimeCurrent();
+    w = 0;
+    l = 0;
+    prof = 0;
+    loss = 0;
+    Atualizar();
+    Print(">>> Stats resetadas!");
+}
+
+//+------------------------------------------------------------------+
+void Toggle(string n, bool est, string lbl)
+{
+    string txt = lbl + ": " + (est ? "ON" : "OFF");
+    color cor = est ? clrLimeGreen : C'70,70,70';
+    ObjectSetString(0, n, OBJPROP_TEXT, txt);
+    ObjectSetInteger(0, n, OBJPROP_BGCOLOR, cor);
+}
+
+//+------------------------------------------------------------------+
+void Atualizar()
+{
+    double net = prof - loss;
+    double pg = (balInicial > 0) ? (net / balInicial) * 100 : 0;
+
+    ObjectSetString(0, p + "StProg", OBJPROP_TEXT, "Progress: " + DoubleToString(pg, 1) + "%");
+    ObjectSetInteger(0, p + "StProg", OBJPROP_COLOR, (pg >= 0) ? clrLimeGreen : clrTomato);
+
+    ObjectSetString(0, p + "StW", OBJPROP_TEXT, "Wins: " + IntegerToString(w));
+    ObjectSetString(0, p + "StL", OBJPROP_TEXT, "Loss: " + IntegerToString(l));
+    ObjectSetString(0, p + "StProf", OBJPROP_TEXT, "Profit: $" + DoubleToString(prof, 2));
+    ObjectSetString(0, p + "StLoss", OBJPROP_TEXT, "Loss: $" + DoubleToString(loss, 2));
+    ObjectSetString(0, p + "StNet", OBJPROP_TEXT, "Net: $" + DoubleToString(net, 2));
+    ObjectSetInteger(0, p + "StNet", OBJPROP_COLOR, (net >= 0) ? clrLimeGreen : clrTomato);
+
+    ChartRedraw();
+}
+
+//+------------------------------------------------------------------+
+void Limpar()
+{
+    for(int i = ObjectsTotal(0, 0, -1) - 1; i >= 0; i--)
+    {
+        string n = ObjectName(0, i, 0, -1);
+        if(StringFind(n, p) >= 0) ObjectDelete(0, n);
+    }
+    ChartRedraw();
+}
+//+------------------------------------------------------------------+
