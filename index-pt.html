@@ -1,562 +1,426 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ghostwave Trading Wallet Project</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GhostWave – Trading Wallet Project</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0812;
+  --surface:#100e1a;
+  --surface2:#16132a;
+  --border:rgba(138,92,246,0.18);
+  --text:#e8e4f0;
+  --muted:#9d96b8;
+  --faint:#4a4468;
+  --primary:#8a5cf6;
+  --primary-glow:#b07fff;
+  --cyan:#22d3ee;
+  --cyan-glow:#67e8f9;
+  --green:#22c55e;
+  --gold:#fbbf24;
+  --red:#f43f5e;
+  --font-display:"Rajdhani",sans-serif;
+  --font-body:"Inter",sans-serif;
+  --r-lg:0.75rem;
+  --r-xl:1.25rem;
+  --shadow-glow:0 0 40px rgba(138,92,246,0.25),0 0 80px rgba(138,92,246,0.1);
+  --shadow-cyan:0 0 30px rgba(34,211,238,0.2);
+}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:1rem;line-height:1.6;overflow-x:hidden}
+img{display:block;max-width:100%;height:auto}
+a{color:inherit;text-decoration:none}
+button{cursor:pointer;font:inherit;border:none;background:none}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--primary);border-radius:999px}
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #0a0a0a;
-            color: #ffffff;
-            line-height: 1.6;
-            position: relative;
-            min-height: 100vh;
-        }
+/* BG */
+.bg-lightning{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.bg-lightning::before,.bg-lightning::after{content:"";position:absolute;width:1px;background:linear-gradient(to bottom,transparent,rgba(138,92,246,0.5),transparent);animation:lflash 4s infinite}
+.bg-lightning::before{height:60%;left:15%;top:0;animation-delay:0s}
+.bg-lightning::after{height:80%;right:20%;top:5%;animation-delay:2.1s}
+.bolt{position:absolute;width:1px;background:linear-gradient(to bottom,transparent,rgba(34,211,238,0.35),transparent);animation:lflash 6s infinite}
+.bolt:nth-child(1){height:50%;left:40%;top:10%;animation-delay:1.3s}
+.bolt:nth-child(2){height:70%;right:8%;top:0;animation-delay:3.7s}
+.bolt:nth-child(3){height:40%;left:70%;top:20%;animation-delay:0.8s}
+@keyframes lflash{0%,90%,100%{opacity:0}92%{opacity:1}94%{opacity:0.3}96%{opacity:0.8}98%{opacity:0}}
+.bg-grid{position:fixed;inset:0;pointer-events:none;z-index:0;background-image:linear-gradient(rgba(138,92,246,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(138,92,246,0.04) 1px,transparent 1px);background-size:60px 60px}
 
-        .lightning-bg {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            overflow: hidden;
-        }
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;backdrop-filter:blur(20px);background:rgba(10,8,18,0.85);border-bottom:1px solid var(--border)}
+.nav-logo{display:flex;align-items:center;gap:0.75rem}
+.nav-logo img{height:40px;width:auto;filter:drop-shadow(0 0 8px rgba(138,92,246,0.6))}
+.nav-logo-text{font-family:var(--font-display);font-size:1.4rem;font-weight:700;letter-spacing:0.05em;background:linear-gradient(135deg,var(--primary-glow),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.nav-cta{background:linear-gradient(135deg,var(--primary),var(--cyan));color:#fff;padding:0.5rem 1.5rem;border-radius:999px;font-weight:600;font-size:0.875rem;letter-spacing:0.05em;transition:all 0.2s;box-shadow:0 0 20px rgba(138,92,246,0.4)}
+.nav-cta:hover{transform:translateY(-1px);box-shadow:0 0 30px rgba(138,92,246,0.6)}
 
-        .lightning-bg::before {
-            content: '';
-            position: absolute;
-            top: -10%;
-            left: -10%;
-            width: 120%;
-            height: 120%;
-            background-image: url('ghostwave_background.jpeg');
-            background-size: cover;
-            background-position: center center;
-            background-repeat: no-repeat;
-            image-rendering: -webkit-optimize-contrast;
-            image-rendering: crisp-edges;
-            filter: blur(0px);
-            transform: scale(1.05);
-        }
+/* HERO */
+.hero{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:8rem 2rem 4rem}
+.hero-badge{display:inline-flex;align-items:center;gap:0.5rem;background:rgba(138,92,246,0.12);border:1px solid rgba(138,92,246,0.3);padding:0.35rem 1rem;border-radius:999px;font-size:0.75rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--primary-glow);margin-bottom:2rem;animation:pbadge 3s ease-in-out infinite}
+@keyframes pbadge{0%,100%{box-shadow:0 0 0 0 rgba(138,92,246,0.4)}50%{box-shadow:0 0 0 8px rgba(138,92,246,0)}}
+.hero-logo{width:min(260px,65vw);margin:0 auto 2.5rem;filter:drop-shadow(0 0 40px rgba(138,92,246,0.5)) drop-shadow(0 0 80px rgba(34,211,238,0.2));animation:float 5s ease-in-out infinite;border-radius:1rem}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.hero h1{font-family:var(--font-display);font-size:clamp(2.4rem,6vw,5rem);font-weight:700;line-height:1.05;letter-spacing:0.02em;margin-bottom:1.5rem}
+.hero h1 .line2{display:block;background:linear-gradient(135deg,var(--primary-glow) 0%,var(--cyan) 50%,var(--gold) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-size:clamp(1rem,2vw,1.2rem);color:var(--muted);max-width:600px;margin:0 auto 3rem;line-height:1.7}
+.hero-sub strong{color:var(--cyan);font-weight:600}
+.hero-actions{display:flex;flex-wrap:wrap;gap:1rem;justify-content:center;margin-bottom:4rem}
+.btn-primary{background:linear-gradient(135deg,var(--primary),#6d28d9);color:#fff;padding:0.9rem 2.5rem;border-radius:999px;font-weight:700;font-size:1rem;letter-spacing:0.05em;box-shadow:var(--shadow-glow);transition:all 0.25s;display:inline-flex;align-items:center}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 0 50px rgba(138,92,246,0.5)}
+.btn-secondary{background:transparent;color:var(--text);padding:0.9rem 2.5rem;border-radius:999px;font-weight:600;font-size:1rem;border:1px solid var(--border);transition:all 0.25s}
+.btn-secondary:hover{border-color:var(--primary);color:var(--primary-glow)}
+.hero-stats{display:flex;flex-wrap:wrap;gap:2rem;justify-content:center}
+.stat{text-align:center}
+.stat-value{font-family:var(--font-display);font-size:2rem;font-weight:700;background:linear-gradient(135deg,var(--primary-glow),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1}
+.stat-label{font-size:0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-top:0.25rem}
+.stat-divider{width:1px;background:var(--border);align-self:stretch}
 
-        .lightning-bg::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            background: linear-gradient(180deg, 
-                rgba(0, 0, 0, 0.3) 0%, 
-                rgba(10, 10, 20, 0.5) 50%, 
-                rgba(0, 0, 0, 0.6) 100%);
-        }
+/* MARQUEE */
+.marquee-wrap{position:relative;z-index:1;overflow:hidden;padding:1.5rem 0;background:linear-gradient(90deg,var(--bg),rgba(138,92,246,0.08),var(--bg));border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin-bottom:6rem}
+.marquee-track{display:flex;gap:3rem;animation:marquee 22s linear infinite;width:max-content}
+.marquee-item{display:flex;align-items:center;gap:0.75rem;white-space:nowrap;font-size:0.875rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em}
+.marquee-item .dot{width:6px;height:6px;border-radius:50%;background:var(--primary)}
+.marquee-item.g .dot{background:var(--green)}
+.marquee-item.c .dot{background:var(--cyan)}
+.marquee-item.o .dot{background:var(--gold)}
+@keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-            position: relative;
-            z-index: 1;
-        }
+/* SECTION */
+section{position:relative;z-index:1}
+.wrap{max-width:1100px;margin:0 auto;padding:0 2rem}
+.slabel{font-size:0.75rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:var(--primary);margin-bottom:0.75rem}
+.stitle{font-family:var(--font-display);font-size:clamp(1.8rem,4vw,3rem);font-weight:700;line-height:1.1;margin-bottom:1rem}
+.stitle span{background:linear-gradient(135deg,var(--primary-glow),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.sdesc{color:var(--muted);font-size:1.0625rem;max-width:580px;line-height:1.7}
 
-        header {
-            text-align: center;
-            padding: 40px 20px;
-            border-bottom: 2px solid rgba(139, 92, 246, 0.3);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            background: rgba(0, 0, 0, 0.5);
-            border-radius: 15px;
-            margin-bottom: 20px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-        }
+/* HOW */
+.how{padding:6rem 0}
+.how-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem;margin-top:4rem}
+.how-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:2rem;transition:all 0.3s;position:relative;overflow:hidden}
+.how-card:hover{border-color:rgba(138,92,246,0.4);transform:translateY(-4px);box-shadow:var(--shadow-glow)}
+.how-num{font-family:var(--font-display);font-size:3.5rem;font-weight:700;line-height:1;background:linear-gradient(135deg,rgba(138,92,246,0.4),rgba(34,211,238,0.25));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:1rem}
+.how-card h3{font-family:var(--font-display);font-size:1.3rem;font-weight:700;margin-bottom:0.75rem;letter-spacing:0.03em}
+.how-card p{color:var(--muted);font-size:0.9375rem;line-height:1.6}
 
-        .logo {
-            max-width: 600px;
-            width: 100%;
-            height: auto;
-            margin-bottom: 20px;
-            filter: drop-shadow(0 0 30px rgba(139, 92, 246, 0.8));
-        }
+/* FEATURES */
+.features{padding:6rem 0;background:linear-gradient(180deg,transparent,rgba(138,92,246,0.03),transparent)}
+.feat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1.5rem;margin-top:3rem}
+.feat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:1.75rem;display:flex;gap:1.25rem;align-items:flex-start;transition:all 0.3s}
+.feat-card:hover{border-color:rgba(34,211,238,0.3);box-shadow:var(--shadow-cyan)}
+.feat-icon{width:48px;height:48px;flex-shrink:0;border-radius:var(--r-lg);display:flex;align-items:center;justify-content:center;font-size:1.4rem;background:linear-gradient(135deg,rgba(138,92,246,0.2),rgba(34,211,238,0.1));border:1px solid rgba(138,92,246,0.2)}
+.feat-card h3{font-family:var(--font-display);font-size:1.1rem;font-weight:700;margin-bottom:0.5rem;letter-spacing:0.03em}
+.feat-card p{color:var(--muted);font-size:0.875rem;line-height:1.6}
 
-        .language-switch {
-            margin: 0px 0;
-        }
+/* SIGNALS */
+.signal-section{padding:6rem 0}
+.signal-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;margin-top:4rem}
+.signal-hdr{background:rgba(138,92,246,0.08);border-bottom:1px solid var(--border);padding:1rem 1.5rem;display:flex;align-items:center;gap:0.75rem}
+.sdot{width:10px;height:10px;border-radius:50%;animation:blink 1.5s ease-in-out infinite}
+.sdot.g{background:var(--green)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+.signal-body{padding:2rem}
+.srows{display:flex;flex-direction:column;gap:1rem}
+.srow{display:flex;align-items:center;gap:1rem;padding:1rem 1.25rem;border-radius:var(--r-lg);background:var(--bg);border:1px solid var(--border);flex-wrap:wrap}
+.sbadge{padding:0.3rem 0.75rem;border-radius:999px;font-size:0.75rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;white-space:nowrap}
+.sbadge.buy{background:rgba(34,197,94,0.15);color:var(--green);border:1px solid rgba(34,197,94,0.3)}
+.sbadge.sell{background:rgba(244,63,94,0.15);color:var(--red);border:1px solid rgba(244,63,94,0.3)}
+.sbadge.be{background:rgba(251,191,36,0.15);color:var(--gold);border:1px solid rgba(251,191,36,0.3)}
+.spair{font-family:var(--font-display);font-size:1.1rem;font-weight:700;letter-spacing:0.05em;flex:1;min-width:80px}
+.sprice{font-size:0.875rem;color:var(--muted)}
+.sprofit{font-family:var(--font-display);font-size:1rem;font-weight:700;color:var(--green);white-space:nowrap}
 
-        .language-switch a {
-            color: #a78bfa;
-            text-decoration: none;
-            margin: 0 10px;
-            font-weight: bold;
-            transition: color 0.3s;
-            font-size: 1.1em;
-        }
+/* TESTI */
+.testi{padding:6rem 0}
+.testi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem;margin-top:3rem}
+.tcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:2rem;transition:all 0.3s}
+.tcard:hover{border-color:rgba(138,92,246,0.35);transform:translateY(-3px)}
+.tstars{color:var(--gold);font-size:1rem;margin-bottom:1rem;letter-spacing:0.1em}
+.ttext{color:var(--text);font-size:0.9375rem;line-height:1.7;margin-bottom:1.5rem;font-style:italic}
+.tauthor{display:flex;align-items:center;gap:0.75rem}
+.tavatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--cyan));display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:700;font-size:1rem;color:#fff;flex-shrink:0}
+.tname{font-weight:600;font-size:0.9375rem}
+.trole{font-size:0.75rem;color:var(--muted)}
 
-        .language-switch a:hover {
-            color: #60a5fa;
-            text-shadow: 0 0 10px rgba(96, 165, 250, 0.8);
-        }
+/* PRICING */
+.pricing{padding:6rem 0}
+.price-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem;margin-top:4rem;max-width:860px;margin-left:auto;margin-right:auto}
+.pcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:2.5rem 2rem;text-align:center;transition:all 0.3s;position:relative}
+.pcard.featured{border-color:var(--primary);box-shadow:var(--shadow-glow);background:linear-gradient(160deg,var(--surface2),var(--surface))}
+.pbadge{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--primary),var(--cyan));color:#fff;padding:0.25rem 1.25rem;border-radius:999px;font-size:0.7rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;white-space:nowrap}
+.pname{font-family:var(--font-display);font-size:1rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:1.5rem}
+.pvalue{font-family:var(--font-display);font-size:3.5rem;font-weight:700;line-height:1;margin-bottom:0.5rem}
+.pvalue span{font-size:1.5rem;color:var(--muted)}
+.pperiod{font-size:0.875rem;color:var(--muted);margin-bottom:2rem}
+.pfeats{list-style:none;text-align:left;margin-bottom:2.5rem;display:flex;flex-direction:column;gap:0.75rem}
+.pfeats li{display:flex;align-items:center;gap:0.75rem;font-size:0.9375rem;color:var(--muted)}
+.pfeats li::before{content:"\2713";color:var(--green);font-weight:700;font-size:0.875rem;flex-shrink:0}
+.pfeats li.no{color:var(--faint)}
+.pfeats li.no::before{content:"\2715";color:var(--faint)}
+.pbtn{width:100%;padding:0.875rem;border-radius:999px;font-weight:700;font-size:0.9375rem;letter-spacing:0.05em;transition:all 0.25s}
+.pbtn.outline{border:1px solid var(--border);color:var(--text)}
+.pbtn.outline:hover{border-color:var(--primary);color:var(--primary-glow)}
+.pbtn.filled{background:linear-gradient(135deg,var(--primary),var(--cyan));color:#fff;box-shadow:var(--shadow-glow)}
+.pbtn.filled:hover{transform:translateY(-2px);box-shadow:0 0 40px rgba(138,92,246,0.5)}
 
-        .hero {
-            text-align: center;
-            padding: 60px 20px;
-            background: rgba(10, 10, 30, 0.9);
-            border-radius: 20px;
-            margin: 40px 0;
-            border: 2px solid rgba(139, 92, 246, 0.5);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.6);
-        }
+/* CTA */
+.cta-sec{padding:8rem 0;text-align:center}
+.cta-inner{background:linear-gradient(135deg,rgba(138,92,246,0.12),rgba(34,211,238,0.06));border:1px solid rgba(138,92,246,0.3);border-radius:2rem;padding:5rem 3rem;position:relative;overflow:hidden}
+.cta-inner h2{font-family:var(--font-display);font-size:clamp(2rem,5vw,4rem);font-weight:700;line-height:1.1;margin-bottom:1.5rem}
+.cta-inner h2 span{background:linear-gradient(135deg,var(--primary-glow),var(--cyan),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.cta-inner p{color:var(--muted);font-size:1.125rem;max-width:520px;margin:0 auto 3rem;line-height:1.7}
+.cta-note{margin-top:1.5rem;font-size:0.8125rem;color:var(--faint)}
 
-        .hero h1 {
-            font-size: 2.5em;
-            margin-bottom: 20px;
-            color: #ffffff;
-            text-shadow: 0 0 20px rgba(139, 92, 246, 0.8);
-        }
+/* FOOTER */
+footer{border-top:1px solid var(--border);padding:3rem 2rem;text-align:center;position:relative;z-index:1}
+.flogo{display:flex;align-items:center;justify-content:center;gap:0.75rem;margin-bottom:1.5rem}
+.flogo img{height:36px;filter:drop-shadow(0 0 6px rgba(138,92,246,0.5));border-radius:0.5rem}
+.flogo span{font-family:var(--font-display);font-size:1.2rem;font-weight:700;background:linear-gradient(135deg,var(--primary-glow),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.flinks{display:flex;flex-wrap:wrap;gap:2rem;justify-content:center;margin-bottom:2rem}
+.flinks a{font-size:0.875rem;color:var(--muted);transition:color 0.2s}
+.flinks a:hover{color:var(--primary-glow)}
+.fdis{font-size:0.75rem;color:var(--faint);max-width:600px;margin:0 auto;line-height:1.6}
 
-        .hero p {
-            font-size: 1.2em;
-            color: #e0e7ff;
-            max-width: 800px;
-            margin: 0 auto 30px;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
-        }
+/* FADE */
+.fi{opacity:1}
+@supports(animation-timeline:scroll()){
+  .fi{opacity:0;animation:rfade linear both;animation-timeline:view();animation-range:entry 0% entry 80%}
+  @keyframes rfade{to{opacity:1}}
+}
 
-        .status-badge {
-            display: inline-block;
-            background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
-            padding: 12px 35px;
-            border-radius: 30px;
-            font-weight: bold;
-            margin: 20px 0;
-            box-shadow: 0 0 40px rgba(139, 92, 246, 0.8);
-            font-size: 1.1em;
-        }
-
-        .features {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 30px;
-            margin: 60px 0;
-        }
-
-        .feature-card {
-            background: rgba(10, 10, 30, 0.9);
-            padding: 30px;
-            border-radius: 15px;
-            border: 1px solid rgba(139, 92, 246, 0.4);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            transition: transform 0.3s, box-shadow 0.3s;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.6);
-        }
-
-        .feature-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 15px 50px rgba(139, 92, 246, 0.6);
-            border-color: rgba(139, 92, 246, 0.8);
-        }
-
-        .feature-card h3 {
-            color: #a78bfa;
-            margin-bottom: 15px;
-            font-size: 1.5em;
-            text-shadow: 0 0 15px rgba(167, 139, 250, 0.5);
-        }
-
-        .feature-card p {
-            color: #cbd5e1;
-        }
-
-        .waitlist {
-            background: rgba(10, 10, 30, 0.95);
-            padding: 60px 20px;
-            border-radius: 20px;
-            text-align: center;
-            margin: 60px 0;
-            border: 2px solid rgba(139, 92, 246, 0.6);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.6);
-        }
-
-        .waitlist h2 {
-            font-size: 2em;
-            color: #ffffff;
-            margin-bottom: 20px;
-            text-shadow: 0 0 20px rgba(139, 92, 246, 0.8);
-        }
-
-        .waitlist-form {
-            max-width: 500px;
-            margin: 30px auto;
-        }
-
-        .waitlist-form input {
-            width: 100%;
-            padding: 15px;
-            margin: 10px 0;
-            border: 2px solid rgba(139, 92, 246, 0.5);
-            background: rgba(5, 5, 20, 0.95);
-            color: #ffffff;
-            border-radius: 10px;
-            font-size: 1em;
-            transition: border-color 0.3s, box-shadow 0.3s;
-        }
-
-        .waitlist-form input:focus {
-            outline: none;
-            border-color: #a78bfa;
-            box-shadow: 0 0 20px rgba(139, 92, 246, 0.6);
-        }
-
-        .waitlist-form input::placeholder {
-            color: #94a3b8;
-        }
-
-        .btn {
-            display: inline-block;
-            padding: 15px 40px;
-            margin: 10px;
-            background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
-            color: white;
-            text-decoration: none;
-            border-radius: 10px;
-            font-weight: bold;
-            transition: transform 0.3s, box-shadow 0.3s;
-            border: none;
-            cursor: pointer;
-            font-size: 1em;
-        }
-
-        .btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 5px 40px rgba(139, 92, 246, 0.8);
-        }
-
-        .social-links {
-            margin: 60px 0;
-            text-align: center;
-        }
-
-        .social-links h2 {
-            color: #ffffff;
-            margin-bottom: 40px;
-            text-shadow: 0 0 20px rgba(139, 92, 246, 0.8);
-            font-size: 2em;
-        }
-
-        .social-container {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 25px;
-        }
-
-        .social-btn {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 16px 30px;
-            border-radius: 12px;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 1.1em;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            min-width: 200px;
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border: 2px solid transparent;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-        }
-
-        .social-btn:hover {
-            transform: translateY(-5px) scale(1.03);
-            box-shadow: 0 8px 35px rgba(0, 0, 0, 0.6);
-        }
-
-        .social-icon {
-            width: 24px;
-            height: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            border-radius: 6px;
-            padding: 4px;
-        }
-
-        .social-text {
-            flex-grow: 1;
-            text-align: left;
-        }
-
-        .social-telegram {
-            background: linear-gradient(135deg, #0088cc 0%, #006699 100%);
-            color: white;
-        }
-
-        .social-telegram:hover {
-            background: linear-gradient(135deg, #0099e6 0%, #0077b3 100%);
-            border-color: rgba(0, 136, 204, 0.5);
-            box-shadow: 0 8px 35px rgba(0, 136, 204, 0.5);
-        }
-
-        .social-telegram .social-icon {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .social-instagram {
-            background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
-            color: white;
-        }
-
-        .social-instagram:hover {
-            background: linear-gradient(45deg, #ffad4d 0%, #f57c5e 25%, #e6395a 50%, #d6337c 75%, #c6288b 100%);
-            border-color: rgba(225, 48, 108, 0.5);
-            box-shadow: 0 8px 35px rgba(225, 48, 108, 0.5);
-        }
-
-        .social-instagram .social-icon {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .social-discord {
-            background: linear-gradient(135deg, #5865F2 0%, #3C45A5 100%);
-            color: white;
-        }
-
-        .social-discord:hover {
-            background: linear-gradient(135deg, #6f7af5 0%, #4a54c2 100%);
-            border-color: rgba(88, 101, 242, 0.5);
-            box-shadow: 0 8px 35px rgba(88, 101, 242, 0.5);
-        }
-
-        .social-discord .social-icon {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .social-x {
-            background: linear-gradient(135deg, #000000 0%, #333333 100%);
-            color: white;
-        }
-
-        .social-x:hover {
-            background: linear-gradient(135deg, #1a1a1a 0%, #4d4d4d 100%);
-            border-color: rgba(0, 0, 0, 0.5);
-            box-shadow: 0 8px 35px rgba(0, 0, 0, 0.5);
-        }
-
-        .social-x .social-icon {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .social-youtube {
-            background: linear-gradient(135deg, #FF0000 0%, #CC0000 100%);
-            color: white;
-        }
-
-        .social-youtube:hover {
-            background: linear-gradient(135deg, #ff3333 0%, #e60000 100%);
-            border-color: rgba(255, 0, 0, 0.5);
-            box-shadow: 0 8px 35px rgba(255, 0, 0, 0.5);
-        }
-
-        .social-youtube .social-icon {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .screenshot-section {
-            margin: 60px 0;
-            text-align: center;
-        }
-
-        .screenshot-section h2 {
-            font-size: 2em;
-            color: #ffffff;
-            margin-bottom: 40px;
-            text-shadow: 0 0 20px rgba(139, 92, 246, 0.8);
-        }
-
-        .screenshot-placeholder {
-            background: rgba(10, 10, 30, 0.9);
-            border: 2px dashed rgba(139, 92, 246, 0.5);
-            border-radius: 15px;
-            padding: 100px 20px;
-            margin: 20px 0;
-            color: #94a3b8;
-            font-style: italic;
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            transition: border-color 0.3s;
-        }
-
-        .screenshot-placeholder:hover {
-            border-color: rgba(139, 92, 246, 0.8);
-        }
-
-        footer {
-            text-align: center;
-            padding: 40px 20px;
-            border-top: 2px solid rgba(139, 92, 246, 0.3);
-            margin-top: 60px;
-            color: #94a3b8;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border-radius: 15px;
-        }
-
-        @media (max-width: 768px) {
-            .hero h1 {
-                font-size: 1.8em;
-            }
-
-            .features {
-                grid-template-columns: 1fr;
-            }
-
-            .logo {
-                max-width: 90%;
-            }
-            
-            .social-container {
-                flex-direction: column;
-                align-items: center;
-            }
-            
-            .social-btn {
-                width: 100%;
-                max-width: 300px;
-                justify-content: flex-start;
-            }
-        }
-    </style>
+@media(max-width:768px){
+  nav{padding:1rem}
+  .hero{padding:7rem 1.5rem 4rem}
+  .hero-stats{gap:1.5rem}
+  .stat-divider{display:none}
+  .wrap{padding:0 1.5rem}
+  .cta-inner{padding:3rem 1.5rem}
+  .price-grid{max-width:100%}
+  .srow{gap:0.5rem}
+}
+</style>
 </head>
 <body>
-    <div class="lightning-bg"></div>
 
-    <div class="container">
-        <header>
-            <img src="ghostwave_logo.png" alt="Ghostwave Trading Wallet Project" class="logo">
-            <div class="language-switch">
-                <a href="index.html">English</a> | <a href="index-pt.html">Português</a>
-            </div>
-        </header>
+<div class="bg-lightning"><div class="bolt"></div><div class="bolt"></div><div class="bolt"></div></div>
+<div class="bg-grid"></div>
 
-        <section class="hero">
-            <h1>Indicador Profissional para TradingView</h1>
-            <p>Um indicador de trading de ponta projetado para precisão e alta performance. Construído com algoritmos avançados para identificar oportunidades de trading otimizadas.</p>
-            <div class="status-badge">🚀 PROJETO EM DESENVOLVIMENTO </div>
-        </section>
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">
+    <img src="logo.jpeg" onerror="this.style.opacity='0.3'" alt="GhostWave" width="40" height="40">
+    <span class="nav-logo-text">GHOSTWAVE</span>
+  </div>
+  <a href="#pricing" class="nav-cta">Começar Agora</a>
+</nav>
 
-        <section class="features">
-            <div class="feature-card">
-                <h3>⚡ Algoritmos Avançados</h3>
-                <p>Alimentado por métodos sofisticados de análise para detectar zonas de oferta e demanda com precisão excepcional.</p>
-            </div>
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge">⚡ Indicador Profissional de Trading</div>
+  <img src="logo.jpeg" onerror="this.style.opacity='0.3'" alt="GhostWave TrendCraft SwiftEdge" class="hero-logo" width="260" height="260" loading="eager">
+  <h1>
+    <span>O Indicador que</span>
+    <span class="line2">Transforma Traders em Vencedores</span>
+  </h1>
+  <p class="hero-sub">
+    O <strong>TrendCraft SwiftEdge</strong> identifica os melhores momentos de entrada e saída do mercado em tempo real — com sinais visuais claros, automáticos e precisos.
+  </p>
+  <div class="hero-actions">
+    <a href="#pricing" class="btn-primary">⚡ Quero Meus Sinais Agora</a>
+    <a href="#how" class="btn-secondary">Como funciona?</a>
+  </div>
+  <div class="hero-stats">
+    <div class="stat"><div class="stat-value">92%</div><div class="stat-label">Precisão</div></div>
+    <div class="stat-divider"></div>
+    <div class="stat"><div class="stat-value">+3.400</div><div class="stat-label">Traders Ativos</div></div>
+    <div class="stat-divider"></div>
+    <div class="stat"><div class="stat-value">24/7</div><div class="stat-label">Monitoramento</div></div>
+    <div class="stat-divider"></div>
+    <div class="stat"><div class="stat-value">$0</div><div class="stat-label">Robô Necessário</div></div>
+  </div>
+</section>
 
-            <div class="feature-card">
-                <h3>📊 Análise Multi-Timeframe</h3>
-                <p>Funciona perfeitamente em múltiplos timeframes para fornecer insights abrangentes do mercado.</p>
-            </div>
+<!-- MARQUEE -->
+<div class="marquee-wrap">
+  <div class="marquee-track">
+    <div class="marquee-item g"><span class="dot"></span>XAUUSD BUY +127 pts</div>
+    <div class="marquee-item"><span class="dot"></span>NAS100 SELL confirmado</div>
+    <div class="marquee-item c"><span class="dot"></span>US30 Sinal BE ativado</div>
+    <div class="marquee-item o"><span class="dot"></span>Engolfo detectado · EURUSD</div>
+    <div class="marquee-item g"><span class="dot"></span>XAUUSD BUY +89 pts</div>
+    <div class="marquee-item"><span class="dot"></span>Banda SMA confirmada · US30</div>
+    <div class="marquee-item c"><span class="dot"></span>EMA crossover · NAS100</div>
+    <div class="marquee-item o"><span class="dot"></span>Flag BUY plotada · XAUUSD</div>
+    <div class="marquee-item g"><span class="dot"></span>XAUUSD BUY +127 pts</div>
+    <div class="marquee-item"><span class="dot"></span>NAS100 SELL confirmado</div>
+    <div class="marquee-item c"><span class="dot"></span>US30 Sinal BE ativado</div>
+    <div class="marquee-item o"><span class="dot"></span>Engolfo detectado · EURUSD</div>
+    <div class="marquee-item g"><span class="dot"></span>XAUUSD BUY +89 pts</div>
+    <div class="marquee-item"><span class="dot"></span>Banda SMA confirmada · US30</div>
+    <div class="marquee-item c"><span class="dot"></span>EMA crossover · NAS100</div>
+    <div class="marquee-item o"><span class="dot"></span>Flag BUY plotada · XAUUSD</div>
+  </div>
+</div>
 
-            <div class="feature-card">
-                <h3>🎯 Sinais Precisos</h3>
-                <p>Sinais claros de entrada e saída projetados para estratégias de scalping e day trading.</p>
-            </div>
-
-            <div class="feature-card">
-                <h3>💎 Nível Profissional</h3>
-                <p>Construído por traders algorítmicos experientes com histórico comprovado em sistemas automatizados.</p>
-            </div>
-
-            <div class="feature-card">
-                <h3>🔄 Atualizações em Tempo Real</h3>
-                <p>Análise de mercado ao vivo com notificações instantâneas de oportunidades de trading.</p>
-            </div>
-
-            <div class="feature-card">
-                <h3>🛡️ Gerenciamento de Risco</h3>
-                <p>Recursos integrados de gerenciamento de risco para proteger seu capital e maximizar retornos.</p>
-            </div>
-        </section>
-
-        <section class="screenshot-section">
-            <h2>Performance do Indicador</h2>
-            <div class="screenshot-placeholder">
-                📈 Screenshot do Gráfico #1<br>
-                (Adicione suas capturas de tela do indicador aqui)
-            </div>
-            <div class="screenshot-placeholder">
-                📊 Screenshot do Gráfico #2<br>
-                (Adicione suas capturas de tela do indicador aqui)
-            </div>
-            <div class="screenshot-placeholder">
-                💹 Screenshot do Gráfico #3<br>
-                (Adicione suas capturas de tela do indicador aqui)
-            </div>
-        </section>
-
-        <section class="waitlist">
-            <h2>Entre na Lista de Espera</h2>
-            <p>Esteja entre os primeiros a acessar este poderoso indicador quando for lançado.</p>
-
-            <form class="waitlist-form" id="waitlistForm">
-                <input type="text" placeholder="Seu Nome" required>
-                <input type="email" placeholder="Seu Email" required>
-                <input type="tel" placeholder="WhatsApp/Telegram (Opcional)">
-                <button type="submit" class="btn">Entrar na Lista</button>
-            </form>
-        </section>
-
-        <section class="social-links">
-            <h2>Conecte-se Conosco</h2>
-            <div class="social-container">
-                <a href="https://t.me/seu_grupo_telegram" target="_blank" class="social-btn social-telegram">
-                   
-                    <div class="social-text">Telegram</div>
-                </a>
-                
-                <a href="https://instagram.com/fxrod1x" target="_blank" class="social-btn social-instagram">
-                   
-                    <div class="social-text">Instagram</div>
-                </a>
-                
-      
-                </a>
-                
-                <a href="https://youtube.com/seu_canal" target="_blank" class="social-btn social-youtube">
-                    
-                    <div class="social-text">YouTube</div>
-                </a>
-            </div>
-        </section>
-
-        <footer>
-            <p>&copy; 2026 Ghostwave Trading Wallet Project. Todos os direitos reservados.</p>
-            <p>Construído com precisão para traders profissionais.</p>
-        </footer>
+<!-- HOW -->
+<section class="how" id="how">
+  <div class="wrap">
+    <div class="fi">
+      <p class="slabel">Como Funciona</p>
+      <h2 class="stitle">3 passos para <span>lucrar com precisão</span></h2>
+      <p class="sdesc">Você não precisa ser especialista. O GhostWave faz a análise pesada por você.</p>
     </div>
+    <div class="how-grid">
+      <div class="how-card fi">
+        <div class="how-num">01</div>
+        <h3>Instale no TradingView</h3>
+        <p>Em menos de 5 minutos, o indicador está ativo no seu gráfico. Compatível com qualquer ativo: ouro, índices, forex e muito mais.</p>
+      </div>
+      <div class="how-card fi">
+        <div class="how-num">02</div>
+        <h3>Aguarde o Sinal</h3>
+        <p>O TrendCraft SwiftEdge analisa automaticamente a banda SMA, cruzamentos de EMA e padrões de engolfo para encontrar entradas de alta probabilidade.</p>
+      </div>
+      <div class="how-card fi">
+        <div class="how-num">03</div>
+        <h3>Entre, Proteja e Lucre</h3>
+        <p>O indicador marca o entry ▶ Buy / ◀ Sell, posiciona o Stop Loss automaticamente e sinaliza o Break Even (BE) quando atingido.</p>
+      </div>
+    </div>
+  </div>
+</section>
 
-    <script>
-        document.getElementById('waitlistForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            alert('Obrigado por entrar na nossa lista de espera! Entraremos em contato em breve.');
-            this.reset();
-        });
-    </script>
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div class="wrap">
+    <div class="fi" style="text-align:center;max-width:600px;margin:0 auto">
+      <p class="slabel">Funcionalidades</p>
+      <h2 class="stitle">Tecnologia de <span>hedge funds</span> na sua tela</h2>
+    </div>
+    <div class="feat-grid">
+      <div class="feat-card fi"><div class="feat-icon">📊</div><div><h3>Banda SMA Dinâmica</h3><p>Muda automaticamente de verde (alta) para vermelha (baixa), sinalizando a tendência dominante em tempo real.</p></div></div>
+      <div class="feat-card fi"><div class="feat-icon">⚡</div><div><h3>Sinais Anti-Repaint</h3><p>Uma vez plotado, o sinal é permanente. Sem setas que somem, sem ilusões. O que você vê é exatamente o que aconteceu.</p></div></div>
+      <div class="feat-card fi"><div class="feat-icon">🎯</div><div><h3>Stop Loss Automático</h3><p>O SL é calculado e exibido automaticamente fora da banda SMA, com buffer configurável para proteção extra.</p></div></div>
+      <div class="feat-card fi"><div class="feat-icon">💛</div><div><h3>Break Even Inteligente</h3><p>O sinal BE aparece quando o trade atinge 50% da distância entre entry e stop — hora de mover o SL para zero.</p></div></div>
+      <div class="feat-card fi"><div class="feat-icon">🔥</div><div><h3>Engolfo de 2 Velas</h3><p>O algoritmo exige que a vela de confirmação engolfe as 2 anteriores — filtrando entradas fracas e selecionando momentum real.</p></div></div>
+      <div class="feat-card fi"><div class="feat-icon">🔁</div><div><h3>Filtro Alternado Buy/Sell</h3><p>Modo opcional que força alternância entre compra e venda, mantendo sua operação disciplinada e sem excesso de sinais.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- SIGNALS -->
+<section class="signal-section" id="signals">
+  <div class="wrap">
+    <div class="fi" style="text-align:center;max-width:600px;margin:0 auto">
+      <p class="slabel">Sinais ao Vivo</p>
+      <h2 class="stitle">Veja os sinais <span>em ação</span></h2>
+    </div>
+    <div class="signal-box fi">
+      <div class="signal-hdr">
+        <div class="sdot g"></div>
+        <span style="font-size:0.875rem;font-weight:600;letter-spacing:0.05em">GHOSTWAVE · LIVE SIGNALS</span>
+        <div style="margin-left:auto;font-size:0.75rem;color:var(--muted)">TradingView · M5</div>
+      </div>
+      <div class="signal-body">
+        <div class="srows">
+          <div class="srow"><span class="sbadge buy">▶ BUY</span><span class="spair">XAUUSD</span><span class="sprice">Entry: 3.312,50</span><span class="sprice" style="color:var(--red)">SL: 3.308,20</span><span class="sprofit">+127 pts</span></div>
+          <div class="srow"><span class="sbadge sell">◀ SELL</span><span class="spair">NAS100</span><span class="sprice">Entry: 19.480,00</span><span class="sprice" style="color:var(--red)">SL: 19.512,00</span><span class="sprofit">+89 pts</span></div>
+          <div class="srow"><span class="sbadge be">■ BE</span><span class="spair">US30</span><span class="sprice">BE ativado: 42.150</span><span class="sprice">50% do risco protegido</span><span class="sprofit" style="color:var(--gold)">+61 pts</span></div>
+          <div class="srow"><span class="sbadge buy">▶ BUY</span><span class="spair">EURUSD</span><span class="sprice">Entry: 1.12480</span><span class="sprice" style="color:var(--red)">SL: 1.12310</span><span class="sprofit">+43 pts</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTI -->
+<section class="testi" id="testimonials">
+  <div class="wrap">
+    <div class="fi" style="text-align:center;max-width:600px;margin:0 auto">
+      <p class="slabel">Depoimentos</p>
+      <h2 class="stitle">Traders que já <span>mudaram de vida</span></h2>
+    </div>
+    <div class="testi-grid">
+      <div class="tcard fi"><div class="tstars">★★★★★</div><p class="ttext">"Nunca imaginei que seria tão simples. As setas aparecem, eu sigo o sinal, o BE ativa sozinho. Esse mês fechei +R$8.400 no ouro."</p><div class="tauthor"><div class="tavatar">RM</div><div><div class="tname">Rafael M.</div><div class="trole">Trader · São Paulo, BR</div></div></div></div>
+      <div class="tcard fi"><div class="tstars">★★★★★</div><p class="ttext">"Fiquei 2 anos perdendo dinheiro com outros indicadores. O GhostWave foi diferente desde o primeiro dia. O SL automático me salvou várias vezes."</p><div class="tauthor"><div class="tavatar">CA</div><div><div class="tname">Carolina A.</div><div class="trole">Day Trader · Rio de Janeiro, BR</div></div></div></div>
+      <div class="tcard fi"><div class="tstars">★★★★★</div><p class="ttext">"Uso no NAS100 e no US30. A precisão do engolfo de 2 velas filtrou muito os sinais falsos. Recomendo sem hesitar a qualquer trader sério."</p><div class="tauthor"><div class="tavatar">PT</div><div><div class="tname">Pedro T.</div><div class="trole">Scalper · Lisboa, PT</div></div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing" id="pricing">
+  <div class="wrap">
+    <div class="fi" style="text-align:center;max-width:600px;margin:0 auto">
+      <p class="slabel">Planos</p>
+      <h2 class="stitle">Invista no seu <span>futuro financeiro</span></h2>
+      <p class="sdesc" style="margin:0 auto">Escolha o plano ideal. Cancele quando quiser.</p>
+    </div>
+    <div class="price-grid">
+      <div class="pcard fi">
+        <div class="pname">Starter</div>
+        <div class="pvalue"><span>$</span>47</div>
+        <div class="pperiod">por mês</div>
+        <ul class="pfeats">
+          <li>Acesso ao TrendCraft SwiftEdge</li>
+          <li>Sinais Buy &amp; Sell</li>
+          <li>Stop Loss automático</li>
+          <li>Suporte por email</li>
+          <li class="no">Break Even (BE) arrow</li>
+          <li class="no">Filtro de alternância</li>
+        </ul>
+        <button class="pbtn outline">Começar →</button>
+      </div>
+      <div class="pcard featured fi">
+        <div class="pbadge">⚡ MAIS POPULAR</div>
+        <div class="pname">Pro</div>
+        <div class="pvalue"><span>$</span>97</div>
+        <div class="pperiod">por mês</div>
+        <ul class="pfeats">
+          <li>Tudo do Starter</li>
+          <li>Break Even arrow (BE)</li>
+          <li>Filtro de alternância Buy/Sell</li>
+          <li>Janela de sinal (até 15 barras)</li>
+          <li>Suporte prioritário 24h</li>
+          <li>Atualizações vitalícias</li>
+        </ul>
+        <button class="pbtn filled">Quero o Pro →</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-sec">
+  <div class="wrap">
+    <div class="cta-inner fi">
+      <h2>Pare de perder dinheiro.<br><span>Comece a lucrar hoje.</span></h2>
+      <p>O mercado não espera. Cada vela sem o GhostWave é uma oportunidade deixada na mesa. Junte-se a mais de 3.400 traders que já transformaram suas carteiras.</p>
+      <a href="#pricing" class="btn-primary" style="font-size:1.1rem;padding:1.1rem 3rem">⚡ Ativar Minha Conta Agora</a>
+      <p class="cta-note">✓ Garantia de 7 dias &nbsp;·&nbsp; ✓ Cancele a qualquer momento &nbsp;·&nbsp; ✓ Suporte em português</p>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="flogo">
+    <img src="logo.jpeg" onerror="this.style.opacity='0.3'" alt="GhostWave" width="36" height="36" loading="lazy">
+    <span>GHOSTWAVE TRADING WALLET PROJECT</span>
+  </div>
+  <div class="flinks">
+    <a href="#how">Como Funciona</a>
+    <a href="#features">Funcionalidades</a>
+    <a href="#testimonials">Depoimentos</a>
+    <a href="#pricing">Preços</a>
+  </div>
+  <p class="fdis">⚠️ Aviso de Risco: Trading de ativos financeiros envolve risco substancial de perda. Os resultados passados não garantem resultados futuros. O GhostWave é uma ferramenta de análise técnica e não constitui aconselhamento financeiro. Opere com responsabilidade e apenas com capital que você pode se dar ao luxo de perder.</p>
+</footer>
+
 </body>
 </html>
